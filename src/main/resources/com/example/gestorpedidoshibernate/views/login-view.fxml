@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity"
+            minWidth="-Infinity"
+            prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/20.0.1"
+            fx:controller="com.example.gestorpedidoshibernate.controllers.LoginController">
+    <left>
+        <BorderPane prefHeight="400.0" prefWidth="231.0" style="-fx-background-color: #E2AC48;"
+                    BorderPane.alignment="CENTER">
+            <center>
+                <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+                    <children>
+                        <ImageView fitHeight="82.0" fitWidth="81.0" pickOnBounds="true" preserveRatio="true">
+                            <image>
+                                <Image url="@../../../../img/book-of-black-cover-closed.png"/>
+                            </image>
+                            <VBox.margin>
+                                <Insets bottom="20.0"/>
+                            </VBox.margin>
+                        </ImageView>
+                        <Label prefHeight="124.0" prefWidth="157.0" text="Gestor de pedidos" textAlignment="CENTER"
+                               wrapText="true">
+                            <font>
+                                <Font size="30.0"/>
+                            </font>
+                            <VBox.margin>
+                                <Insets bottom="90.0"/>
+                            </VBox.margin>
+                        </Label>
+                    </children>
+                </VBox>
+            </center>
+        </BorderPane>
+    </left>
+    <right>
+        <BorderPane prefHeight="400.0" prefWidth="363.0" BorderPane.alignment="CENTER">
+            <center>
+                <VBox alignment="CENTER" prefHeight="400.0" prefWidth="281.0" BorderPane.alignment="CENTER">
+                    <children>
+                        <Label alignment="CENTER" prefHeight="42.0" prefWidth="107.0" text="Login">
+                            <font>
+                                <Font name="System Bold" size="34.0"/>
+                            </font>
+                            <opaqueInsets>
+                                <Insets/>
+                            </opaqueInsets>
+                            <VBox.margin>
+                                <Insets bottom="40.0"/>
+                            </VBox.margin>
+                        </Label>
+                        <TextField fx:id="userField" promptText="User"
+                                   style="-fx-border-width: 0px 0px 2px 0px; -fx-border-color: #E2AC48; -fx-background-color: transparent;">
+                            <VBox.margin>
+                                <Insets bottom="40.0" left="70.0" right="70.0"/>
+                            </VBox.margin>
+                            <font>
+                                <Font size="14.0"/>
+                            </font>
+                        </TextField>
+                        <PasswordField fx:id="passField" promptText="Password"
+                                       style="-fx-border-color: #E2AC48; -fx-border-width: 0px 0px 2px 0px; -fx-background-color: transparent;">
+                            <VBox.margin>
+                                <Insets bottom="40.0" left="70.0" right="70.0"/>
+                            </VBox.margin>
+                            <font>
+                                <Font size="14.0"/>
+                            </font>
+                        </PasswordField>
+                        <FlowPane alignment="CENTER" columnHalignment="CENTER">
+                            <children>
+                                <Button fx:id="cancelarButton" mnemonicParsing="false" onAction="#logout"
+                                        prefHeight="31.0" prefWidth="73.0" style="-fx-background-color: #E2AC48;"
+                                        text="Cancelar">
+                                    <FlowPane.margin>
+                                        <Insets right="20.0"/>
+                                    </FlowPane.margin>
+                                </Button>
+                                <Button fx:id="entrarButton" mnemonicParsing="false" onAction="#login" prefHeight="31.0"
+                                        prefWidth="73.0" style="-fx-background-color: #E2AC48;"
+                                        stylesheets="@../../../../style.css" text="Entrar">
+                                    <FlowPane.margin>
+                                        <Insets left="20.0"/>
+                                    </FlowPane.margin>
+                                </Button>
+                            </children>
+                        </FlowPane>
+                    </children>
+                </VBox>
+            </center>
+            <bottom>
+                <Label fx:id="info" BorderPane.alignment="CENTER"/>
+            </bottom>
+        </BorderPane>
+    </right>
+</BorderPane>

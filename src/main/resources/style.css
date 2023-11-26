@@ -1,0 +1,12 @@
+#entrarButton:hover {
+    -fx-background-color: #91d091;
+    -fx-transition: background-color 0.5s;
+}
+
+#tabla .column-header .label {
+    -fx-background-color: #E2AC48; /* Cambia el color de fondo según tu preferencia */
+}
+
+#tablaItems .column-header .label {
+    -fx-background-color: #E2AC48;
+}
