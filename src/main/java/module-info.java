@@ -3,8 +3,9 @@ module com.example.gestorpedidoshibernate {
     requires javafx.fxml;
     requires lombok;
 
-    requires jakarta.persistence;
-    requires org.hibernate.orm.core;
+    //requires jakarta.persistence;
+    //requires org.hibernate.orm.core;
+    requires javax.persistence;
     requires java.naming;
     requires java.sql; //Si trabajamos con fechas
 

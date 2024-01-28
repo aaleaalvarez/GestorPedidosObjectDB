@@ -1,8 +1,8 @@
 package com.example.gestorpedidoshibernate.domain.Producto;
 
-import jakarta.persistence.*;
 import lombok.Data;
 
+import javax.persistence.*;
 import java.io.Serializable;
 
 /**
@@ -38,6 +38,13 @@ public class Producto implements Serializable {
      */
     @Column(name = "cantidad_disponible")
     private int cantidadDisponible;
+
+    public Producto(Long id, String nombre, double precio, int cantidad) {
+        this.id = id;
+        this.nombre = nombre;
+        this.precio = precio;
+        this.cantidadDisponible = cantidad;
+    }
 
     /**
      * Devuelve una representación en cadena del objeto Producto.

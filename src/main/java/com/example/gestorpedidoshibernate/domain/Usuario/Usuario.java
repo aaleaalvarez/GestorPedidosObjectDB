@@ -1,9 +1,9 @@
 package com.example.gestorpedidoshibernate.domain.Usuario;
 
 import com.example.gestorpedidoshibernate.domain.Pedido.Pedido;
-import jakarta.persistence.*;
 import lombok.Data;
 
+import javax.persistence.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +44,13 @@ public class Usuario implements Serializable {
      */
     @OneToMany(mappedBy = "usuario", fetch = FetchType.EAGER)
     private List<Pedido> pedidos = new ArrayList<>(0);
+
+    public Usuario(Long id, String nombre, String contraseña, String email) {
+        this.id = id;
+        this.nombre = nombre;
+        this.contraseña = contraseña;
+        this.email = email;
+    }
 
     /**
      * Devuelve una representación en cadena del objeto Usuario.

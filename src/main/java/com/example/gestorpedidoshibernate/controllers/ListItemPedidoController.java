@@ -229,6 +229,7 @@ public class ListItemPedidoController implements Initializable {
         String codigoPedido = Session.getCurrentItemPedido().getCodigo();
         pedidoActual = PedidoDAO.findByCodigo(codigoPedido);
 
+        // Obtén el nombre del producto seleccionado
         String nombreProd = productoBox.getValue() != null ? productoBox.getValue().toString() : null;
 
         if (nombreProd == null) {
@@ -240,23 +241,29 @@ public class ListItemPedidoController implements Initializable {
             return;
         }
 
-        Producto productoSelec = productoDAO.findByName(nombreProd);
-        if (productoSelec == null) {
+        // Obtén una lista de productos con el nombre seleccionado
+        List<Producto> productosSeleccionados = productoDAO.findByName(nombreProd);
+
+        // Verifica si la lista no está vacía
+        if (!productosSeleccionados.isEmpty()) {
+            // Selecciona el primer producto de la lista (puedes ajustar esto según tus necesidades)
+            Producto productoSelec = productosSeleccionados.get(0);
+
+            // Resto del código...
+            ItemPedido nuevoItem = new ItemPedido();
+            nuevoItem.setProducto(productoSelec);
+            nuevoItem.setCantidad(Integer.parseInt("1"));
+            nuevoItem.setPedido(pedidoActual);
+
+            itemPedidoDAO.save(nuevoItem);
+            recargarYRefrescarTabla();
+        } else {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error de Producto");
             alert.setHeaderText("Producto No Encontrado");
             alert.setContentText("El producto seleccionado no existe. Por favor, selecciona otro producto.");
             alert.showAndWait();
-            return;
         }
-
-        ItemPedido nuevoItem = new ItemPedido();
-        nuevoItem.setProducto(productoSelec);
-        nuevoItem.setCantidad(Integer.parseInt("1"));
-        nuevoItem.setPedido(pedidoActual);
-
-        itemPedidoDAO.save(nuevoItem);
-        recargarYRefrescarTabla();
     }
 
     /**

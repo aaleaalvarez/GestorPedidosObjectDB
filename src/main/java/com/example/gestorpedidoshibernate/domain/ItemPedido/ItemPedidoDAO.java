@@ -1,13 +1,13 @@
 package com.example.gestorpedidoshibernate.domain.ItemPedido;
 
 import com.example.gestorpedidoshibernate.domain.DAO;
-import com.example.gestorpedidoshibernate.domain.HibernateUtil;
-import com.example.gestorpedidoshibernate.domain.Pedido.Pedido;
+import com.example.gestorpedidoshibernate.domain.ObjectDBUtil;
+import com.example.gestorpedidoshibernate.domain.Producto.Producto;
 import com.example.gestorpedidoshibernate.domain.Usuario.Usuario;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,7 +26,7 @@ public class ItemPedidoDAO implements DAO<ItemPedido> {
      * @return Una lista de todos los elementos del pedido.
      */
     @Override
-    public ArrayList<ItemPedido> getAll() {
+    public List<Producto> getAll() {
         return null;
     }
 
@@ -37,23 +37,20 @@ public class ItemPedidoDAO implements DAO<ItemPedido> {
      * @return Una lista de elementos del pedido asociados al pedido con el código dado.
      */
     public List<ItemPedido> findItemsByPedidoCodigo(String codigoPedido) {
-        List<ItemPedido> results = new ArrayList<>();
+        javax.persistence.EntityManager em = ObjectDBUtil.getEntityManagerFactory().createEntityManager();
+        List<ItemPedido> items = new ArrayList<>();
 
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction transaction = session.beginTransaction();
-
-            Query<ItemPedido> query = session.createQuery(
+        try {
+            TypedQuery<ItemPedido> query = em.createQuery(
                     "SELECT ip FROM ItemPedido ip JOIN ip.pedido p JOIN ip.producto prod WHERE p.codigo = :codigoPedido", ItemPedido.class);
             query.setParameter("codigoPedido", codigoPedido);
-            results = query.getResultList();
-
-            transaction.commit();
+            items = query.getResultList();
         } catch (Exception e) {
-            // Maneja la excepción de manera adecuada para tu aplicación
             e.printStackTrace();
+        } finally {
+            em.close();
         }
-
-        return results;
+        return items;
     }
 
     /**
@@ -86,35 +83,21 @@ public class ItemPedidoDAO implements DAO<ItemPedido> {
      */
     @Override
     public ItemPedido save(ItemPedido data) {
-        Transaction transaction = null;
-        Session session = null;
-
+        EntityManager em = ObjectDBUtil.getEntityManagerFactory().createEntityManager();
+        EntityTransaction transaction = em.getTransaction();
         try {
-            session = HibernateUtil.getSessionFactory().openSession();
-            transaction = session.beginTransaction();
-            session.persist(data);
-
-            Pedido pedido = data.getPedido();
-            if (pedido != null) {
-                Query<Double> query = session.createQuery("SELECT SUM(ip.cantidad * prod.precio) FROM ItemPedido ip " + "JOIN ip.producto prod WHERE ip.pedido.id = :pedidoId", Double.class);
-                query.setParameter("pedidoId", pedido.getId());
-                Double nuevoTotal = query.getSingleResult();
-
-                pedido.setTotal(nuevoTotal != null ? nuevoTotal : 0.0);
-                session.update(pedido);
-            }
+            transaction.begin();
+            em.persist(data);
             transaction.commit();
             return data;
         } catch (Exception e) {
-            if (transaction != null) {
+            if (transaction.isActive()) {
                 transaction.rollback();
             }
             e.printStackTrace();
             throw e;
         } finally {
-            if (session != null && session.isOpen()) {
-                session.close();
-            }
+            em.close();
         }
     }
 
@@ -142,29 +125,26 @@ public class ItemPedidoDAO implements DAO<ItemPedido> {
      * @param item El elemento del pedido a eliminar.
      * @return true si la eliminación fue exitosa, false en caso contrario.
      */
+    @Override
     public boolean remove(ItemPedido item) {
+        javax.persistence.EntityManager em = ObjectDBUtil.getEntityManagerFactory().createEntityManager();
+        javax.persistence.EntityTransaction transaction = em.getTransaction();
         boolean salida = false;
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        Transaction transaction = null;
-
         try {
-            transaction = session.beginTransaction();
-            ItemPedido itemRemove = session.get(ItemPedido.class, item.getId());
-            if (itemRemove != null) {
-                Pedido pedido = itemRemove.getPedido();
-                session.remove(itemRemove);
-
-                session.update(pedido);
+            transaction.begin();
+            ItemPedido itemToRemove = em.find(ItemPedido.class, item.getId());
+            if (itemToRemove != null) {
+                em.remove(itemToRemove);
                 salida = true;
             }
             transaction.commit();
         } catch (Exception e) {
-            if (transaction != null) {
+            if (transaction.isActive()) {
                 transaction.rollback();
             }
             e.printStackTrace();
         } finally {
-            session.close();
+            em.close();
         }
         return salida;
     }

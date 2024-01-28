@@ -2,7 +2,7 @@ package com.example.gestorpedidoshibernate.controllers;
 
 import com.example.gestorpedidoshibernate.App;
 import com.example.gestorpedidoshibernate.Session;
-import com.example.gestorpedidoshibernate.domain.HibernateUtil;
+import com.example.gestorpedidoshibernate.domain.ItemPedido.ItemPedido;
 import com.example.gestorpedidoshibernate.domain.Pedido.Pedido;
 import com.example.gestorpedidoshibernate.domain.Pedido.PedidoDAO;
 import com.example.gestorpedidoshibernate.domain.Producto.ProductoDAO;
@@ -13,7 +13,6 @@ import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import org.hibernate.Transaction;
 
 import java.io.IOException;
 import java.net.URL;
@@ -195,25 +194,45 @@ public class ListPedidosController implements Initializable {
         pedido.setUsuario(usuario);
         pedido.setTotal(0.0);
 
-        try (org.hibernate.Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction t = session.beginTransaction();
+        try {
+            // Guarda el pedido en la base de datos
+            pedidoDAO.save(pedido);
 
-            session.save(pedido);
-
-            // Commit y cerrar la transacción
-            t.commit();
+            // Actualiza el precio total del pedido
+            pedidoDAO.actualizarPrecioTotalPedido(pedido.getId());
 
             // Almacena el pedido en la sesión (opcional)
             Session.setCurrentItemPedido(pedido);
 
-            // Cambiar a la escena de los ítems directamente después de crear un pedido
-            try {
-                App.changeScene("listItemPedido-view.fxml", "Items del Pedido");
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            actualizarPrecioTotalPedido(pedido);
+
+
+            // Cambia a la escena de los ítems directamente después de crear un pedido
+            App.changeScene("listItemPedido-view.fxml", "Items del Pedido");
         } catch (Exception e) {
             e.printStackTrace();
+            // Maneja la excepción según tus necesidades
+            // Puedes mostrar un mensaje de error o realizar otras acciones
         }
+    }
+
+    /**
+     * Actualiza el precio total del pedido sumando los totales de sus ítems.
+     *
+     * @param pedido El pedido para el cual se actualizará el precio total.
+     */
+    private void actualizarPrecioTotalPedido(Pedido pedido) {
+        double total = 0.0;
+
+        // Recorre los ítems del pedido y suma sus totales
+        for (ItemPedido item : pedido.getItems()) {
+            total += item.getPrecioTotal();
+        }
+
+        // Actualiza el total del pedido
+        pedido.setTotal(total);
+
+        // Actualiza el pedido en la base de datos (ajusta según tu implementación)
+        pedidoDAO.update(pedido);
     }
 }

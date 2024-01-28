@@ -1,13 +1,14 @@
 package com.example.gestorpedidoshibernate.domain.Producto;
 
 import com.example.gestorpedidoshibernate.domain.DAO;
-import com.example.gestorpedidoshibernate.domain.HibernateUtil;
+import com.example.gestorpedidoshibernate.domain.ItemPedido.ItemPedido;
+import com.example.gestorpedidoshibernate.domain.ObjectDBUtil;
 import com.example.gestorpedidoshibernate.domain.Usuario.Usuario;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Clase que proporciona métodos de acceso a datos para la entidad Producto.
@@ -24,26 +25,15 @@ public class ProductoDAO implements DAO<Producto> {
      * @return Una lista de todos los productos.
      */
     @Override
-    public ArrayList<Producto> getAll() {
-        Session session = null;
-        Transaction tx = null;
-        ArrayList<Producto> productos = new ArrayList<>();
-
+    public List<Producto> getAll() {
+        EntityManager em = ObjectDBUtil.getEntityManagerFactory().createEntityManager();
+        List<Producto> productos;
         try {
-            session = HibernateUtil.getSessionFactory().openSession();
-            tx = session.beginTransaction();
-
-            Query<Producto> query = session.createQuery("FROM Producto", Producto.class);
-            productos = new ArrayList<>(query.list());
-
-            tx.commit();
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            e.printStackTrace();
+            TypedQuery<Producto> query = em.createQuery("SELECT p FROM Producto p", Producto.class);
+            productos = query.getResultList();
         } finally {
-            if (session != null) session.close();
+            em.close();
         }
-
         return productos;
     }
 
@@ -100,21 +90,53 @@ public class ProductoDAO implements DAO<Producto> {
 
     }
 
+    @Override
+    public boolean remove(ItemPedido item) {
+        return false;
+    }
+
     /**
      * Busca un producto por su nombre en la base de datos.
      *
      * @param nombre El nombre del producto a buscar.
      * @return El producto encontrado o null si no se encuentra.
      */
-    public Producto findByName(String nombre) {
-        Producto producto = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Query<Producto> query = session.createQuery("FROM Producto WHERE nombre =: nombre", Producto.class);
+    public List<Producto> findByName(String nombre) {
+        EntityManager em = ObjectDBUtil.getEntityManagerFactory().createEntityManager();
+        List<Producto> productos = new ArrayList<>();
+        try {
+            TypedQuery<Producto> query = em.createQuery("SELECT p FROM Producto p WHERE p.nombre = :nombre", Producto.class);
             query.setParameter("nombre", nombre);
-            producto = query.uniqueResult();
+            productos = query.getResultList();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            em.close();
         }
-        return producto;
+        return productos;
+    }
+
+    public void saveOrUpdate(Producto producto) {
+        EntityManager em = ObjectDBUtil.getEntityManagerFactory().createEntityManager();
+        em.getTransaction().begin();
+        try {
+            Producto existingProducto = em.find(Producto.class, producto.getId());
+            if (existingProducto != null) {
+                // Producto existe, actualiza sus datos
+                existingProducto.setNombre(producto.getNombre());
+                existingProducto.setPrecio(producto.getPrecio());
+                existingProducto.setCantidadDisponible(producto.getCantidadDisponible());
+                // Cualquier otra propiedad que necesites actualizar
+            } else {
+                // Producto no existe, crea uno nuevo
+                em.persist(producto);
+            }
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            em.getTransaction().rollback();
+            // Manejo de excepciones
+        } finally {
+            em.close();
+        }
     }
 }

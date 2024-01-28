@@ -2,9 +2,9 @@ package com.example.gestorpedidoshibernate.domain.ItemPedido;
 
 import com.example.gestorpedidoshibernate.domain.Pedido.Pedido;
 import com.example.gestorpedidoshibernate.domain.Producto.Producto;
-import jakarta.persistence.*;
 import lombok.*;
 
+import javax.persistence.*;
 import java.io.Serializable;
 
 /**
@@ -59,5 +59,12 @@ public class ItemPedido implements Serializable {
                 ", cantidad=" + cantidad +
                 ", producto=" + producto +
                 '}';
+    }
+
+    public double getPrecioTotal() {
+        if (producto != null) {
+            return cantidad * producto.getPrecio();
+        }
+        return 0.0;
     }
 }

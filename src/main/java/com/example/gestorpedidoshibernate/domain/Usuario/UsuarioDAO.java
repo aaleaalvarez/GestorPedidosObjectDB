@@ -1,12 +1,14 @@
 package com.example.gestorpedidoshibernate.domain.Usuario;
 
 import com.example.gestorpedidoshibernate.domain.DAO;
-import com.example.gestorpedidoshibernate.domain.HibernateUtil;
+import com.example.gestorpedidoshibernate.domain.ItemPedido.ItemPedido;
+import com.example.gestorpedidoshibernate.domain.ObjectDBUtil;
+import com.example.gestorpedidoshibernate.domain.Producto.Producto;
 import lombok.extern.java.Log;
-import org.hibernate.Session;
-import org.hibernate.query.Query;
 
-import java.util.ArrayList;
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import java.util.List;
 
 /**
  * Clase que proporciona métodos de acceso a datos para la entidad Usuario.
@@ -24,7 +26,7 @@ public class UsuarioDAO implements DAO<Usuario> {
      * @return Una lista de todos los usuarios.
      */
     @Override
-    public ArrayList<Usuario> getAll() {
+    public List<Producto> getAll() {
         return null;
     }
 
@@ -47,11 +49,14 @@ public class UsuarioDAO implements DAO<Usuario> {
      */
     @Override
     public Usuario get(Long id) {
-        var salida = new Usuario();
-        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
-            salida = s.get(Usuario.class, id);
+        EntityManager em = ObjectDBUtil.getEntityManagerFactory().createEntityManager();
+        Usuario usuario = null;
+        try {
+            usuario = em.find(Usuario.class, id);
+        } finally {
+            em.close();
         }
-        return salida;
+        return usuario;
     }
 
     /**
@@ -85,6 +90,11 @@ public class UsuarioDAO implements DAO<Usuario> {
 
     }
 
+    @Override
+    public boolean remove(ItemPedido item) {
+        return false;
+    }
+
     /**
      * Valida las credenciales de un usuario en la base de datos.
      *
@@ -93,19 +103,32 @@ public class UsuarioDAO implements DAO<Usuario> {
      * @return El usuario si las credenciales son válidas, de lo contrario, null.
      */
     public Usuario validateUser(String username, String password) {
+        EntityManager em = ObjectDBUtil.getEntityManagerFactory().createEntityManager();
         Usuario result = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Query<Usuario> q = session.createQuery("from Usuario where nombre=:u and contraseña=:p", Usuario.class);
+        try {
+            TypedQuery<Usuario> q = em.createQuery("SELECT u FROM Usuario u WHERE u.nombre = :u AND u.contraseña = :p", Usuario.class);
             q.setParameter("u", username);
             q.setParameter("p", password);
-
-            try {
-                result = q.getSingleResult();
-            } catch (Exception e) {
-                log.severe("Error al abrir la sesión: " + e.getMessage());
-                e.printStackTrace();
-            }
+            result = q.getSingleResult();
+        } catch (Exception e) {
+            System.out.println("Error al validar el usuario: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            em.close();
         }
         return result;
+    }
+
+    public void saveAll(List<Usuario> usuarios) {
+        EntityManager em = ObjectDBUtil.getEntityManagerFactory().createEntityManager();
+        try {
+            em.getTransaction().begin();
+            for (Usuario usuario : usuarios) {
+                em.persist(usuario);
+            }
+            em.getTransaction().commit();
+        } finally {
+            em.close();
+        }
     }
 }

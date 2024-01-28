@@ -1,12 +1,14 @@
 package com.example.gestorpedidoshibernate.domain;
 
+import com.example.gestorpedidoshibernate.domain.ItemPedido.ItemPedido;
+import com.example.gestorpedidoshibernate.domain.Producto.Producto;
 import com.example.gestorpedidoshibernate.domain.Usuario.Usuario;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public interface DAO<T> {
 
-    public ArrayList<T> getAll();
+    public List<Producto> getAll();
 
     public T get(int id);
 
@@ -18,4 +20,5 @@ public interface DAO<T> {
 
     public void delete(T data);
 
+    boolean remove(ItemPedido item);
 }

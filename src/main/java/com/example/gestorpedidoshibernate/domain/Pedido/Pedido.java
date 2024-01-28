@@ -2,12 +2,14 @@ package com.example.gestorpedidoshibernate.domain.Pedido;
 
 import com.example.gestorpedidoshibernate.domain.ItemPedido.ItemPedido;
 import com.example.gestorpedidoshibernate.domain.Usuario.Usuario;
-import jakarta.persistence.*;
 import lombok.Data;
 
+import javax.persistence.*;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Clase que representa un pedido en el sistema.
@@ -22,58 +24,55 @@ import java.util.List;
 @Entity
 @Table(name = "Pedido")
 public class Pedido implements Serializable {
-    /**
-     * Identificador único del pedido.
-     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    /**
-     * Código del pedido.
-     */
+
     @Column(name = "codigo")
     private String codigo;
-    /**
-     * Fecha en la que se realizó el pedido.
-     */
+
     @Column(name = "fecha")
     private Date fecha;
 
-    /**
-     * Usuario asociado al pedido.
-     */
     @ManyToOne
     @JoinColumn(name = "usuario_id", referencedColumnName = "id")
     private Usuario usuario;
 
-    /**
-     * Total del pedido.
-     */
     @Column(name = "total")
     private double total;
 
-    /**
-     * Representación de cadena del objeto Pedido.
-     *
-     * @return Una cadena que representa el objeto Pedido.
-     */
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ItemPedido> items = new ArrayList<>();
+
     @Override
     public String toString() {
         return "Pedido{" +
                 "id=" + id +
                 ", codigo='" + codigo + '\'' +
                 ", fecha=" + fecha +
-                //     ", usuario=" + usuario +
                 ", total=" + total +
                 '}';
     }
 
-    /**
-     * Obtiene la lista de elementos del pedido asociados.
-     *
-     * @return La lista de elementos del pedido asociados.
-     */
     public List<ItemPedido> getItems() {
-        return null;
+        return items;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, codigo, fecha, total);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Pedido pedido = (Pedido) o;
+
+        return id != null && id.equals(pedido.id) &&
+                Objects.equals(codigo, pedido.codigo) &&
+                Objects.equals(fecha, pedido.fecha) &&
+                Objects.equals(total, pedido.total);
     }
 }

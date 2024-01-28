@@ -1,5 +1,8 @@
 package com.example.gestorpedidoshibernate;
 
+import com.example.gestorpedidoshibernate.domain.Producto.Producto;
+import com.example.gestorpedidoshibernate.domain.Producto.ProductoDAO;
+import com.example.gestorpedidoshibernate.domain.Usuario.UsuarioDAO;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -50,7 +53,20 @@ public class App extends Application {
      */
     @Override
     public void start(Stage stage) throws IOException {
-        this.stage = stage;
+        try {
+            // Si no hay nada en la base de datos, introduzco datos de prueba
+            ProductoDAO productoDAO = new ProductoDAO();
+            for (Producto producto : Data.getProductos()) {
+                productoDAO.saveOrUpdate(producto);
+            }
+
+            UsuarioDAO usuariodao = new UsuarioDAO();
+            usuariodao.saveAll(Data.getUsuarios());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        App.stage = stage;
         FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("views/login-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 600, 400);
         stage.setTitle("Login");

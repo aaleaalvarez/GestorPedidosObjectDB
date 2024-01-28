@@ -1,14 +1,15 @@
 package com.example.gestorpedidoshibernate.domain.Pedido;
 
 import com.example.gestorpedidoshibernate.domain.DAO;
-import com.example.gestorpedidoshibernate.domain.HibernateUtil;
+import com.example.gestorpedidoshibernate.domain.ItemPedido.ItemPedido;
+import com.example.gestorpedidoshibernate.domain.ObjectDBUtil;
+import com.example.gestorpedidoshibernate.domain.Producto.Producto;
 import com.example.gestorpedidoshibernate.domain.Usuario.Usuario;
-import org.hibernate.Hibernate;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
 
-import java.util.ArrayList;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
+import javax.persistence.TypedQuery;
+import java.util.List;
 
 /**
  * Clase que proporciona operaciones de acceso a datos para la entidad Pedido.
@@ -26,16 +27,19 @@ public class PedidoDAO implements DAO<Pedido> {
      * @return El pedido con el código proporcionado, o null si no se encuentra.
      */
     public static Pedido findByCodigo(String codigo) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Pedido pedido = session.createQuery("FROM Pedido WHERE codigo = :codigo", Pedido.class)
-                    .setParameter("codigo", codigo)
-                    .uniqueResult();
-            Hibernate.initialize(pedido.getItems());
-            return pedido;
+        EntityManager em = ObjectDBUtil.getEntityManagerFactory().createEntityManager();
+        Pedido pedido = null;
+        try {
+            TypedQuery<Pedido> query = em.createQuery("SELECT p FROM Pedido p WHERE p.codigo = :codigo", Pedido.class);
+            query.setParameter("codigo", codigo);
+            pedido = query.getSingleResult();
+
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            em.close();
         }
-        return null;
+        return pedido;
     }
 
     /**
@@ -44,7 +48,7 @@ public class PedidoDAO implements DAO<Pedido> {
      * @return Una lista de todos los pedidos, o null si no hay pedidos.
      */
     @Override
-    public ArrayList<Pedido> getAll() {
+    public List<Producto> getAll() {
         return null;
     }
 
@@ -54,14 +58,17 @@ public class PedidoDAO implements DAO<Pedido> {
      * @param u El identificador del usuario.
      * @return Una lista de pedidos asociados al usuario, o una lista vacía si no hay pedidos.
      */
-    public ArrayList<Pedido> getAllFromUser(int u) {
-        ArrayList<Pedido> results = new ArrayList<>(0);
-        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
-            Query<Pedido> q = s.createQuery("from Pedido where usuario=:usuario_id", Pedido.class);
-            q.setParameter("usuario_id", u);
-            results = (ArrayList<Pedido>) q.getResultList();
+    public List<Pedido> getAllFromUser(int u) {
+        EntityManager em = ObjectDBUtil.getEntityManagerFactory().createEntityManager();
+        List<Pedido> pedidos;
+        try {
+            TypedQuery<Pedido> query = em.createQuery("from Pedido where usuario=:usuario_id", Pedido.class);
+            query.setParameter("usuario_id", u);
+            pedidos = query.getResultList();
+        } finally {
+            em.close();
         }
-        return results;
+        return pedidos;
     }
 
     /**
@@ -94,16 +101,21 @@ public class PedidoDAO implements DAO<Pedido> {
      */
     @Override
     public Pedido save(Pedido data) {
-        Pedido salida = null;
-        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction t = s.beginTransaction();
-            s.persist(data);
-            t.commit();
-            salida = data;
+        EntityManager em = ObjectDBUtil.getEntityManagerFactory().createEntityManager();
+        EntityTransaction transaction = em.getTransaction();
+        try {
+            transaction.begin();
+            em.persist(data);
+            transaction.commit();
         } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
             e.printStackTrace();
+        } finally {
+            em.close();
         }
-        return salida;
+        return data;
     }
 
     /**
@@ -126,31 +138,68 @@ public class PedidoDAO implements DAO<Pedido> {
 
     }
 
+    @Override
+    public boolean remove(ItemPedido item) {
+        return false;
+    }
+
     /**
      * Elimina un pedido y sus elementos asociados por su código.
      *
      * @param codigoPedido El código del pedido a eliminar.
      */
     public void deleteByCodigo(String codigoPedido) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            session.beginTransaction();
+        EntityManager em = ObjectDBUtil.getEntityManagerFactory().createEntityManager();
+        EntityTransaction transaction = em.getTransaction();
+        try {
+            transaction.begin();
 
-            // Elimina los ItemPedido asociados al Pedido con el código dado
-            Query itemPedidoDeleteQuery = session.createQuery("DELETE FROM ItemPedido ip WHERE ip.pedido.codigo = :codigoPedido");
-            itemPedidoDeleteQuery.setParameter("codigoPedido", codigoPedido);
-            itemPedidoDeleteQuery.executeUpdate();
-
-            // Obtiene y elimina el Pedido con el código dado
-            Query<Pedido> pedidoQuery = session.createQuery("FROM Pedido WHERE codigo = :codigo", Pedido.class);
-            pedidoQuery.setParameter("codigo", codigoPedido);
-            Pedido pedido = pedidoQuery.uniqueResult();
+            TypedQuery<Pedido> query = em.createQuery("SELECT p FROM Pedido p WHERE p.codigo = :codigo", Pedido.class);
+            query.setParameter("codigoPedido", codigoPedido);
+            Pedido pedido = query.getSingleResult();
             if (pedido != null) {
-                session.remove(pedido);
+                // Elimina los ítems de pedido asociados antes de eliminar el pedido
+                for (ItemPedido itemPedido : pedido.getItems()) {
+                    em.remove(itemPedido);
+                }
+                em.remove(pedido);
             }
 
-            session.getTransaction().commit();
+            transaction.commit();
         } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
             e.printStackTrace();
+        } finally {
+            em.close();
         }
+    }
+
+    public void actualizarPrecioTotalPedido(Long pedidoId) {
+        EntityManager entityManager = ObjectDBUtil.getEntityManagerFactory().createEntityManager();
+        try {
+            entityManager.getTransaction().begin();
+
+            Pedido pedido = entityManager.find(Pedido.class, pedidoId);
+            Double nuevoTotal = calcularNuevoTotalPedido(pedido);
+            pedido.setTotal(nuevoTotal);
+
+            entityManager.getTransaction().commit();
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    private Double calcularNuevoTotalPedido(Pedido pedido) {
+        // Calcula el nuevo total del pedido en función de los ItemPedido
+        // Puedes iterar sobre los ItemPedido y sumar sus precioTotal aquí
+
+        // Ejemplo de cómo calcular el nuevo total:
+        double nuevoTotal = pedido.getItems().stream()
+                .mapToDouble(ItemPedido::getPrecioTotal)
+                .sum();
+
+        return nuevoTotal;
     }
 }
